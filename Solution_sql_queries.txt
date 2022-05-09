@@ -1,0 +1,86 @@
+● Demonstrate the understanding/awareness of data quality issues; 
+[ is the data complete; are the keys / Id values not null; dates are
+invalid/null/future]
+
+Data is incomplete in sme columns
+
+Table: electricity_services
+
+electricity_service_id column has some blank/null values. B76896, B76898 customer id's doesn't have electricity_service_id but have service_start_date.
+
+service_end_date column has some blank/null values.
+
+Table: mobile_services
+
+service_end_date column has some blank/null values.
+
+In the electricity_services table a record with customer_id as A12375 and electricity_service_id as 213409 has date discreapancies where 
+service_start_date column has greater value than service_end_date column.
+
+-------------------------
+A. How many customers does UtilityPlus serve?
+
+Total 29 customers from both electricity_services & mobile_services.
+
+select count(*) from (
+select CUSTOMER_ID from electricity_services
+union all
+select CUSTOMER_ID from mobile_services
+)
+
+Total 13 distinct customers from both electricity_services & mobile_services on CUSTOMER_ID.
+
+select count(*) from (
+select CUSTOMER_ID from electricity_services
+union
+select CUSTOMER_ID from mobile_services
+);
+
+B. How many services in total does UtilityPlus provide? Can the same
+sql query be used to also show a split of services by type
+(mobile/electricity)?
+Total 27 services
+select sum(services) from (
+select  count(ELECTRICITY_SERVICE_ID) as services from electricity_services
+union all
+select Count(MOBILE_NUMBER) as services FROM mobile_services
+);
+
+select * from (
+select 'electricity_services' as Table_name, count(ELECTRICITY_SERVICE_ID) from electricity_services
+union all
+select 'mobile_services' as Table_name, Count(MOBILE_NUMBER) FROM mobile_services
+);
+
+C. How many customers have both Electricity and Mobile Services?
+
+We have 9 distinct customers we have those having both Electricity and Mobile Services.
+select distinct CUSTOMER_ID from electricity_services where CUSTOMER_ID in (select distinct CUSTOMER_ID from mobile_services);
+
+We have below query as well.
+select CUSTOMER_ID from electricity_services where CUSTOMER_ID in (select CUSTOMER_ID from mobile_services); --14
+select CUSTOMER_ID from mobile_services where CUSTOMER_ID in (select CUSTOMER_ID from electricity_services); --11
+
+
+D. Can you build a data table showing the number of Elec services
+being supplied (i.e. ongoing services and not ended) at the end of each
+month?
+
+select 
+extract(year from SERVICE_START_DATE) as year,
+extract(month from SERVICE_START_DATE) as month, count(*) from 
+electricity_services where SERVICE_END_DATE is null and ELECTRICITY_SERVICE_ID is not null 
+group by year,month order by year,month;
+
+better solution could be below:
+select last_day(SERVICE_START_DATE,'MONTH') as last_day, count(*) 
+from electricity_services where SERVICE_END_DATE is null and ELECTRICITY_SERVICE_ID is not null 
+group by last_day order by last_day;
+
+
+E. What are your observations on the nature of UtilityPlus customers
+and their services based on the datasets?
+
+Observations:
+some customers who have subscription for electricity_services also have mobile_servies.
+majority of customers are looking for electricity_services compared to mobile_servies.
